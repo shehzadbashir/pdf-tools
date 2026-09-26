@@ -20,7 +20,9 @@ const urls = process.argv.slice(2)
 
 /** Google's GIS iframe emits report-only CSP noise; it is not our bug. */
 const isThirdPartyNoise = (text) =>
-  /report-only Content Security Policy/i.test(text) || /csp\.withgoogle\.com/i.test(text)
+  /report-only Content Security Policy/i.test(text) ||
+  /csp\.withgoogle\.com/i.test(text) ||
+  /pagead2\.googlesyndication\.com\/pagead\/ping/i.test(text)
 if (!CHROME) {
   console.error('No Chrome/Edge found')
   process.exit(1)
