@@ -9,7 +9,7 @@ pages_build_output_dir = "dist"
 
 [vars]
 # Must match SITE.googleOAuthClientId in src/config/site.ts for sign-in to work.
-GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_ID = "516024835908-phbijidr675u197ekn7aj63771g6lidq.apps.googleusercontent.com"
 
 # Create the D1 database first, then paste its id here:
 #   npx wrangler d1 create pdf-tools

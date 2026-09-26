@@ -15,7 +15,7 @@ export const SITE = {
   googleSearchConsoleVerification: '',
   adsenseClient: '', // e.g. 'ca-pub-1234567890123456'
   cloudflareAnalyticsToken: '', // e.g. 'a1b2c3d4e5f6...'
-  googleOAuthClientId: '', // e.g. 'xxxx.apps.googleusercontent.com'
+  googleOAuthClientId: '516024835908-phbijidr675u197ekn7aj63771g6lidq.apps.googleusercontent.com',
   maxUploadMb: 200,
 } as const
 
