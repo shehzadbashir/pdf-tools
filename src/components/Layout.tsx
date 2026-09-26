@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
-import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { Analytics } from '@/components/Analytics'
@@ -26,7 +26,6 @@ export function Layout(): ReactNode {
         <Outlet />
       </main>
       <Footer />
-      <ScrollRestoration />
     </div>
   )
 }
