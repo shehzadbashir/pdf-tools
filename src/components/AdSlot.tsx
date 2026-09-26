@@ -16,9 +16,12 @@ let scriptInjected = false
 function injectAdsenseScript(): void {
   if (scriptInjected || !CONFIGURED()) return
   scriptInjected = true
+  const src =
+    'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + SITE.adsenseClient
+  if (document.querySelector('script[src*="adsbygoogle.js"]')) return
   const script = document.createElement('script')
   script.async = true
-  script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + SITE.adsenseClient
+  script.src = src
   script.crossOrigin = 'anonymous'
   document.head.appendChild(script)
 }
