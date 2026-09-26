@@ -1,0 +1,19 @@
+# Cloudflare Pages project configuration.
+# Deploy with:  npm run deploy
+# or connect the repository in the Cloudflare dashboard (build output: dist).
+
+name = "pdf-tools"
+compatibility_date = "2026-09-26"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+[vars]
+# Must match SITE.googleOAuthClientId in src/config/site.ts for sign-in to work.
+GOOGLE_CLIENT_ID = ""
+
+# Create the D1 database first, then paste its id here:
+#   npx wrangler d1 create pdf-tools
+[[d1_databases]]
+binding = "DB"
+database_name = "pdf-tools"
+database_id = "49174fec-71b4-4ad3-b896-360d75d78fa6"

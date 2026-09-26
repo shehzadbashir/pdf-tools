@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+
+    <title>PDF Tools — Merge, Compress, Convert &amp; Edit PDF files online</title>
+    <meta
+      name="description"
+      content="Free online PDF toolkit: merge, split, compress, convert, sign, protect and OCR PDF files. Everything runs in your browser — your files never leave your device."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PDF Tools" />
+    <meta property="og:title" content="PDF Tools — free online PDF toolkit" />
+    <meta
+      property="og:description"
+      content="Merge, split, compress, convert, sign, protect and OCR PDF files. Private by design: processing happens in your browser."
+    />
+    <meta name="twitter:card" content="summary" />
+
+    <script>
+      // Apply the saved theme before first paint to avoid a flash of the wrong colour.
+      try {
+        var s = localStorage.getItem('pt.theme')
+        var dark = s ? s === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+        var l = localStorage.getItem('pt.lang')
+        if (l) {
+          document.documentElement.lang = l
+          document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl'
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 2rem; font-family: system-ui, sans-serif">
+        This site needs JavaScript to run its PDF tools directly in your browser.
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

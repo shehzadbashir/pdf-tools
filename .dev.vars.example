@@ -1,0 +1,4 @@
+# Local-only secrets for `npm run dev:server` (copy to `.dev.vars`, never commit).
+# Production value: npx wrangler pages secret put SESSION_SECRET
+SESSION_SECRET=change-me-to-a-long-random-string
+GOOGLE_CLIENT_ID=
