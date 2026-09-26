@@ -13,7 +13,7 @@ export const SITE = {
   description:
     'Merge, split, compress, convert, sign, protect and OCR PDF files online. Everything runs in your browser — your files never leave your device.',
   googleSearchConsoleVerification: '',
-  adsenseClient: '', // e.g. 'ca-pub-1234567890123456'
+  adsenseClient: 'ca-pub-4457341244293293',
   cloudflareAnalyticsToken: '', // e.g. 'a1b2c3d4e5f6...'
   googleOAuthClientId: '516024835908-phbijidr675u197ekn7aj63771g6lidq.apps.googleusercontent.com',
   maxUploadMb: 200,
