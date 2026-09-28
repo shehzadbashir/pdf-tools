@@ -221,13 +221,24 @@ function searchEnginePlugin(): Plugin {
       writeFileSync(path.join(out, 'robots.txt'), robots, 'utf8')
       rmSync(path.join(out, 'vite.svg'), { force: true })
 
+      const routeMeta = buildRoutes()
+
       // Per-route static head (title / description / canonical / JSON-LD).
       const template = readFileSync(path.join(out, 'index.html'), 'utf8')
-      for (const route of buildRoutes()) {
+      for (const route of routeMeta) {
         const dir = route.dir ? path.join(out, route.dir) : out
         mkdirSync(dir, { recursive: true })
         writeFileSync(path.join(dir, 'index.html'), applyRouteHead(template, route), 'utf8')
       }
+
+      // Serve every tool URL directly instead of letting Pages issue a 308 to
+      // the trailing-slash form, so the canonical URL and the served URL match.
+      const redirects = [
+        ...routeMeta.filter((route) => route.dir).map((route) => `/${route.dir}  /${route.dir}/  200`),
+        '/*  /index.html  200',
+        '',
+      ]
+      writeFileSync(path.join(out, '_redirects'), redirects.join('\n'), 'utf8')
     },
   }
 }
