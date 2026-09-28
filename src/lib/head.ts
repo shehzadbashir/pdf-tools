@@ -23,28 +23,35 @@ function setLink(rel: string, href: string): void {
 
 export interface HeadOptions {
   title?: string
+  /** Complete document title; bypasses the `| PDF Tools` suffixing. */
+  fullTitle?: string
   description?: string
+  /** Robots directive, e.g. `noindex, nofollow` for private pages. */
+  robots?: string
   /** Path beginning with `/`, resolved against the configured site URL. */
   path?: string
 }
 
 /** Keeps the document title and the SEO/OG tags in sync with the current route. */
 export function useHead(options: HeadOptions): void {
-  const { title, description, path } = options
+  const { title, fullTitle, description, robots, path } = options
 
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`
+    const resolved =
+      fullTitle ??
+      (title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`)
     const desc = description ?? SITE.description
     const url = path ? `${SITE.url.replace(/\/$/, '')}${path}` : SITE.url
 
-    document.title = fullTitle
+    document.title = resolved
     setMeta('name', 'description', desc)
+    setMeta('name', 'robots', robots ?? 'index, follow')
     setLink('canonical', path ? url : `${SITE.url.replace(/\/$/, '')}/`)
-    setMeta('property', 'og:title', fullTitle)
+    setMeta('property', 'og:title', resolved)
     setMeta('property', 'og:description', desc)
     setMeta('property', 'og:url', url)
     setMeta('property', 'og:type', 'website')
-    setMeta('name', 'twitter:title', fullTitle)
+    setMeta('name', 'twitter:title', resolved)
     setMeta('name', 'twitter:description', desc)
-  }, [title, description, path])
+  }, [title, fullTitle, description, robots, path])
 }

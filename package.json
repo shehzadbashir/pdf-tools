@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "check:i18n": "node scripts/check-i18n.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "submit:indexnow": "node scripts/indexnow.mjs",
     "deploy": "npm run build && wrangler pages deploy dist",
     "db:create": "wrangler d1 create pdf-tools",
     "db:migrate": "wrangler d1 execute pdf-tools --remote --file migrations/0001_init.sql",

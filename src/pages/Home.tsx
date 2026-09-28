@@ -8,32 +8,44 @@ import { AdSlot } from '@/components/AdSlot'
 import { useHead } from '@/lib/head'
 import { SITE } from '@/config/site'
 
+const FAQ_KEYS = ['faq1', 'faq2', 'faq3', 'faq4'] as const
+
 export default function Home(): ReactNode {
   const { t } = useTranslation()
 
-  useHead({ title: '', description: SITE.description, path: '/' })
+  useHead({ fullTitle: SITE.homeTitle, description: SITE.homeDescription, path: '/' })
 
   useEffect(() => {
-    const node = document.createElement('script')
-    node.type = 'application/ld+json'
-    node.id = 'ld-website'
-    node.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: SITE.name,
-      url: SITE.url,
-      description: SITE.description,
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${SITE.url}/?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
+    const payloads: Record<string, unknown>[] = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE.name,
+        url: SITE.url,
+        description: SITE.homeDescription,
       },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: FAQ_KEYS.map((key) => ({
+          '@type': 'Question',
+          name: t(`home.${key}q`),
+          acceptedAnswer: { '@type': 'Answer', text: t(`home.${key}a`) },
+        })),
+      },
+    ]
+    const nodes = payloads.map((data, index) => {
+      const node = document.createElement('script')
+      node.type = 'application/ld+json'
+      node.id = `ld-home-${index}`
+      node.textContent = JSON.stringify(data)
+      document.head.appendChild(node)
+      return node
     })
-    document.head.appendChild(node)
     return () => {
-      node.remove()
+      nodes.forEach((node) => node.remove())
     }
-  }, [])
+  }, [t])
 
   const popular = TOOLS.filter((tool) =>
     ['merge-pdf', 'split-pdf', 'compress-pdf', 'pdf-to-word'].includes(tool.slug),
@@ -47,7 +59,7 @@ export default function Home(): ReactNode {
 
   const why = ['why1', 'why2', 'why3', 'why4']
 
-  const faq = ['faq1', 'faq2', 'faq3', 'faq4']
+  const faq = FAQ_KEYS
 
   return (
     <div className="pb-16">

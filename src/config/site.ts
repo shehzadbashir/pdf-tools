@@ -10,6 +10,9 @@ export const SITE = {
   name: 'PDF Tools',
   url: 'https://shehzadbashir.xyz',
   tagline: 'Free online PDF toolkit',
+  homeTitle: 'PDF Tools — Merge, Compress, Convert & Edit PDF files online',
+  homeDescription:
+    'Free online PDF toolkit: merge, split, compress, convert, sign, protect and OCR PDF files. Everything runs in your browser — your files never leave your device.',
   description:
     'Merge, split, compress, convert, sign, protect and OCR PDF files online. Everything runs in your browser — your files never leave your device.',
   googleSearchConsoleVerification: '',

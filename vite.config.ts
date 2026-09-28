@@ -2,12 +2,185 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
-import { writeFileSync, existsSync, rmSync } from 'node:fs'
+import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from 'node:fs'
 import { SITE, TOOL_SLUGS } from './src/config/site.ts'
+import { en } from './src/i18n/en.ts'
+
+/** Escapes text for use inside an HTML attribute or element body. */
+const esc = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+
+interface RouteMeta {
+  /** Directory name in the build output, `''` for the home page. */
+  dir: string
+  /** Absolute URL of the page. */
+  url: string
+  title: string
+  description: string
+  robots: string
+  jsonLd: Record<string, unknown>[]
+}
+
+const full = (title: string): string => `${title} | ${SITE.name}`
+
+function buildRoutes(): RouteMeta[] {
+  const base = SITE.url.replace(/\/$/, '')
+  const home = en.home as unknown as Record<string, string>
+  const faqEntries = ['faq1', 'faq2', 'faq3', 'faq4'].map((key) => ({
+    '@type': 'Question',
+    name: home[`${key}q`] ?? '',
+    acceptedAnswer: { '@type': 'Answer', text: home[`${key}a`] ?? '' },
+  }))
+
+  const routes: RouteMeta[] = [
+    {
+      dir: '',
+      url: `${base}/`,
+      title: SITE.homeTitle,
+      description: SITE.homeDescription,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: SITE.name,
+          url: `${base}/`,
+          description: SITE.homeDescription,
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: SITE.name,
+          url: `${base}/`,
+          logo: `${base}/favicon.svg`,
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqEntries,
+        },
+      ],
+    },
+  ]
+
+  for (const slug of TOOL_SLUGS) {
+    const tool = en.tools[slug]
+    const name = tool.name
+    const short = tool.short
+    routes.push({
+      dir: slug,
+      url: `${base}/${slug}`,
+      title: full(`${name} — ${short.replace(/\.$/, '')}`),
+      description: short,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'HowTo',
+          name,
+          description: tool.long,
+          step: tool.steps.map((text, index) => ({
+            '@type': 'HowToStep',
+            name: `Step ${index + 1}`,
+            text,
+          })),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
+            { '@type': 'ListItem', position: 2, name, item: `${base}/${slug}` },
+          ],
+        },
+      ],
+    })
+  }
+
+  routes.push(
+    {
+      dir: 'privacy',
+      url: `${base}/privacy`,
+      title: full(en.legal.privacyTitle),
+      description: en.legal.privacy1,
+      robots: 'index, follow',
+      jsonLd: [],
+    },
+    {
+      dir: 'terms',
+      url: `${base}/terms`,
+      title: full(en.legal.termsTitle),
+      description: en.legal.terms1,
+      robots: 'index, follow',
+      jsonLd: [],
+    },
+    {
+      dir: 'history',
+      url: `${base}/history`,
+      title: full(en.history.title),
+      description: en.history.subtitle,
+      robots: 'noindex, nofollow',
+      jsonLd: [],
+    },
+  )
+
+  return routes
+}
 
 /**
- * Emits robots.txt + sitemap.xml into the build output so that the URLs are
- * always absolute and always in sync with the routing table.
+ * Rewrites the built HTML head so every route ships a unique title,
+ * description, canonical URL and JSON-LD payload in the *static* markup.
+ * Crawlers that do not run JavaScript still index each page correctly.
+ */
+function applyRouteHead(html: string, route: RouteMeta): string {
+  let out = html
+  const replace = (pattern: RegExp, replacement: string): void => {
+    out = out.replace(pattern, replacement)
+  }
+
+  replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(route.title)}</title>`)
+  replace(
+    /<meta\s+name="description"[\s\S]*?\/>/,
+    `<meta name="description" content="${esc(route.description)}" />`,
+  )
+  replace(
+    /<meta\s+name="robots"[\s\S]*?\/>/,
+    `<meta name="robots" content="${esc(route.robots)}" />`,
+  )
+  replace(
+    /<meta\s+property="og:title"[\s\S]*?\/>/,
+    `<meta property="og:title" content="${esc(route.title)}" />`,
+  )
+  replace(
+    /<meta\s+property="og:description"[\s\S]*?\/>/,
+    `<meta property="og:description" content="${esc(route.description)}" />`,
+  )
+
+  const head: string[] = [
+    `<link rel="canonical" href="${route.url}" />`,
+    `<meta property="og:url" content="${route.url}" />`,
+    `<meta name="twitter:title" content="${esc(route.title)}" />`,
+    `<meta name="twitter:description" content="${esc(route.description)}" />`,
+  ]
+  if (SITE.googleSearchConsoleVerification) {
+    head.push(
+      `<meta name="google-site-verification" content="${esc(SITE.googleSearchConsoleVerification)}" />`,
+    )
+  }
+  for (const payload of route.jsonLd) {
+    head.push(`<script type="application/ld+json">${JSON.stringify(payload)}</script>`)
+  }
+
+  return out.replace('</head>', `    ${head.join('\n    ')}\n  </head>`)
+}
+
+/**
+ * Emits robots.txt, sitemap.xml and a statically-headed HTML file for every
+ * route so the URLs are always absolute and always in sync with routing.
  */
 function searchEnginePlugin(): Plugin {
   return {
@@ -47,6 +220,14 @@ function searchEnginePlugin(): Plugin {
       writeFileSync(path.join(out, 'sitemap.xml'), xml, 'utf8')
       writeFileSync(path.join(out, 'robots.txt'), robots, 'utf8')
       rmSync(path.join(out, 'vite.svg'), { force: true })
+
+      // Per-route static head (title / description / canonical / JSON-LD).
+      const template = readFileSync(path.join(out, 'index.html'), 'utf8')
+      for (const route of buildRoutes()) {
+        const dir = route.dir ? path.join(out, route.dir) : out
+        mkdirSync(dir, { recursive: true })
+        writeFileSync(path.join(dir, 'index.html'), applyRouteHead(template, route), 'utf8')
+      }
     },
   }
 }

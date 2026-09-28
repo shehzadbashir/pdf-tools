@@ -25,7 +25,12 @@ export default function HistoryPage(): ReactNode {
   const { user, enabled } = useAuth()
   const [entries, setEntries] = useState<HistoryEntry[]>(() => loadHistory())
 
-  useHead({ title: t('history.title'), description: t('history.subtitle'), path: '/history' })
+  useHead({
+    title: t('history.title'),
+    description: t('history.subtitle'),
+    robots: 'noindex, nofollow',
+    path: '/history',
+  })
 
   useEffect(() => {
     if (!user) return
