@@ -160,12 +160,17 @@ function applyRouteHead(html: string, route: RouteMeta): string {
     `<meta property="og:description" content="${esc(route.description)}" />`,
   )
 
-  const head: string[] = [
-    `<link rel="canonical" href="${route.url}" />`,
-    `<meta property="og:url" content="${route.url}" />`,
+  const head: string[] = []
+  if (route.url) {
+    head.push(
+      `<link rel="canonical" href="${route.url}" />`,
+      `<meta property="og:url" content="${route.url}" />`,
+    )
+  }
+  head.push(
     `<meta name="twitter:title" content="${esc(route.title)}" />`,
     `<meta name="twitter:description" content="${esc(route.description)}" />`,
-  ]
+  )
   if (SITE.googleSearchConsoleVerification) {
     head.push(
       `<meta name="google-site-verification" content="${esc(SITE.googleSearchConsoleVerification)}" />`,
@@ -231,11 +236,26 @@ function searchEnginePlugin(): Plugin {
         writeFileSync(path.join(dir, 'index.html'), applyRouteHead(template, route), 'utf8')
       }
 
+      // Real 404s: unknown URLs return status 404 with the app shell, so the
+      // router can render the not-found page instead of soft-404ing as home.
+      writeFileSync(
+        path.join(out, '404.html'),
+        applyRouteHead(template, {
+          dir: '',
+          url: '',
+          title: full('Page not found'),
+          description: en.notFound.desc,
+          robots: 'noindex, nofollow',
+          jsonLd: [],
+        }),
+        'utf8',
+      )
+
       // Serve every tool URL directly instead of letting Pages issue a 308 to
       // the trailing-slash form, so the canonical URL and the served URL match.
       const redirects = [
         ...routeMeta.filter((route) => route.dir).map((route) => `/${route.dir}  /${route.dir}/  200`),
-        '/*  /index.html  200',
+        '/*  /404.html  404',
         '',
       ]
       writeFileSync(path.join(out, '_redirects'), redirects.join('\n'), 'utf8')
