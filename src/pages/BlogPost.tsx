@@ -7,10 +7,12 @@ import { SITE } from '@/config/site'
 import { BLOG_POSTS, postBySlug } from '@/content/blog'
 import { toolBySlug } from '@/tools/registry'
 import { NotFoundPageContent } from '@/pages/NotFound'
+import { AdSlot } from '@/components/AdSlot'
 
 function postJsonLd(
   post: (typeof BLOG_POSTS)[number],
 ): Record<string, unknown> {
+  const base = SITE.url.replace(/\/$/, '')
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -18,9 +20,15 @@ function postJsonLd(
     description: post.excerpt,
     datePublished: post.published,
     dateModified: post.updated,
+    image: `${base}/og-image.png`,
     author: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-    publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-    mainEntityOfPage: `${SITE.url.replace(/\/$/, '')}/blog/${post.slug}`,
+    publisher: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      logo: { '@type': 'ImageObject', url: `${base}/favicon.svg` },
+    },
+    mainEntityOfPage: `${base}/blog/${post.slug}`,
   }
 }
 
@@ -30,7 +38,14 @@ export function BlogPostPage({ slug }: { slug: string }): ReactNode {
 
   useHead(
     post
-      ? { title: post.title, description: post.excerpt, path: `/blog/${post.slug}` }
+      ? {
+          title: post.title,
+          description: post.excerpt,
+          path: `/blog/${post.slug}`,
+          type: 'article',
+          publishedTime: post.published,
+          updatedTime: post.updated,
+        }
       : { title: 'Page not found', description: t('notFound.desc'), robots: 'noindex, nofollow' },
   )
 
@@ -86,7 +101,9 @@ export function BlogPostPage({ slug }: { slug: string }): ReactNode {
           </p>
         </header>
 
-        <div className="mt-8 space-y-8 border-t border-[var(--line)] pt-8">
+        <AdSlot label="Advertisement" slot="horizontal" format="horizontal" className="mb-8 mt-8" />
+
+        <div className="space-y-8 border-t border-[var(--line)] pt-8">
           {post.sections.map((section) => (
             <section key={section.heading}>
               <h2 className="text-xl font-extrabold tracking-tight text-[var(--ink)]">

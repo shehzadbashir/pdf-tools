@@ -16,9 +16,19 @@ const toolBlock = siteSource.match(/export const TOOL_SLUGS = \[([\s\S]*?)\] as 
 if (!toolBlock) throw new Error('TOOL_SLUGS not found in src/config/site.ts')
 const slugs = [...toolBlock[1].matchAll(/'([^']+)'/g)].map((match) => match[1])
 
+const blogSource = readFileSync(path.resolve('src/content/blog.ts'), 'utf8')
+const blogBlock = blogSource.match(/export const BLOG_POSTS[\s\S]*?= \[([\s\S]*?)\]\n\nexport function/)
+if (!blogBlock) throw new Error('BLOG_POSTS not found in src/content/blog.ts')
+const blogSlugs = [...blogBlock[1].matchAll(/slug:\s*'([^']+)'/g)].map((match) => match[1])
+
 const urlList = [
   `${BASE}/`,
   ...slugs.map((slug) => `${BASE}/${slug}`),
+  `${BASE}/blog`,
+  ...blogSlugs.map((slug) => `${BASE}/blog/${slug}`),
+  `${BASE}/about`,
+  `${BASE}/contact`,
+  `${BASE}/dmca`,
   `${BASE}/privacy`,
   `${BASE}/terms`,
 ]

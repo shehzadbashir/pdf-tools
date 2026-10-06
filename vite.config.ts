@@ -26,6 +26,9 @@ interface RouteMeta {
   description: string
   robots: string
   jsonLd: Record<string, unknown>[]
+  /** ISO dates that turn the page into an `article` for social crawlers. */
+  published?: string
+  updated?: string
 }
 
 const full = (title: string): string => `${title} | ${SITE.name}`
@@ -53,6 +56,14 @@ function buildRoutes(): RouteMeta[] {
           name: SITE.name,
           url: `${base}/`,
           description: SITE.homeDescription,
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: `${base}/?q={search_term_string}`,
+            },
+            'query-input': 'required name=search_term_string',
+          },
         },
         {
           '@context': 'https://schema.org',
@@ -212,6 +223,8 @@ function buildRoutes(): RouteMeta[] {
       title: full(post.title),
       description: post.excerpt,
       robots: 'index, follow',
+      published: post.published,
+      updated: post.updated,
       jsonLd: [
         {
           '@context': 'https://schema.org',
@@ -268,18 +281,30 @@ function applyRouteHead(html: string, route: RouteMeta): string {
     /<meta\s+property="og:description"[\s\S]*?\/>/,
     `<meta property="og:description" content="${esc(route.description)}" />`,
   )
-
-  const head: string[] = []
-  if (route.url) {
-    head.push(
-      `<link rel="canonical" href="${route.url}" />`,
-      `<meta property="og:url" content="${route.url}" />`,
-    )
-  }
-  head.push(
+  replace(/<meta\s+property="og:url"[\s\S]*?\/>/, `<meta property="og:url" content="${route.url}" />`)
+  replace(
+    /<meta\s+property="og:type"[\s\S]*?\/>/,
+    `<meta property="og:type" content="${route.published ? 'article' : 'website'}" />`,
+  )
+  replace(
+    /<meta\s+name="twitter:title"[\s\S]*?\/>/,
     `<meta name="twitter:title" content="${esc(route.title)}" />`,
+  )
+  replace(
+    /<meta\s+name="twitter:description"[\s\S]*?\/>/,
     `<meta name="twitter:description" content="${esc(route.description)}" />`,
   )
+  if (!out.includes('rel="canonical"')) {
+    out = out.replace('</head>', `    <link rel="canonical" href="${route.url}" />\n  </head>`)
+  }
+
+  const head: string[] = []
+  if (route.published) {
+    head.push(
+      `<meta property="article:published_time" content="${route.published}" />`,
+      ...(route.updated ? [`<meta property="article:modified_time" content="${route.updated}" />`] : []),
+    )
+  }
   if (SITE.googleSearchConsoleVerification) {
     head.push(
       `<meta name="google-site-verification" content="${esc(SITE.googleSearchConsoleVerification)}" />`,
@@ -317,6 +342,10 @@ function searchEnginePlugin(): Plugin {
         '/terms',
       ]
 
+      const lastmodByRoute = new Map(
+        BLOG_POSTS.map((post) => [`/blog/${post.slug}`, post.updated]),
+      )
+
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -324,6 +353,9 @@ function searchEnginePlugin(): Plugin {
           [
             '  <url>',
             `    <loc>${url}${route === '/' ? '/' : route}</loc>`,
+            ...(lastmodByRoute.has(route)
+              ? [`    <lastmod>${lastmodByRoute.get(route)}</lastmod>`]
+              : []),
             `    <changefreq>${i === 0 ? 'daily' : 'weekly'}</changefreq>`,
             `    <priority>${i === 0 ? '1.0' : '0.8'}</priority>`,
             '  </url>',
@@ -343,6 +375,22 @@ function searchEnginePlugin(): Plugin {
 
       writeFileSync(path.join(out, 'sitemap.xml'), xml, 'utf8')
       writeFileSync(path.join(out, 'robots.txt'), robots, 'utf8')
+      // Security / caching headers (wired through Cloudflare Pages `_headers`).
+      writeFileSync(
+        path.join(out, '_headers'),
+        [
+          '/*',
+          '  X-Content-Type-Options: nosniff',
+          '  Referrer-Policy: strict-origin-when-cross-origin',
+          '  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          '  X-Frame-Options: SAMEORIGIN',
+          '',
+          '/og-image.png',
+          '  Cache-Control: public, max-age=86400',
+          '',
+        ].join('\n'),
+        'utf8',
+      )
       rmSync(path.join(out, 'vite.svg'), { force: true })
 
       const routeMeta = buildRoutes()

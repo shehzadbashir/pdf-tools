@@ -17,6 +17,16 @@ export const SITE = {
     'Merge, split, compress, convert, sign, protect and OCR PDF files online. Everything runs in your browser — your files never leave your device.',
   googleSearchConsoleVerification: '',
   adsenseClient: 'ca-pub-4457341244293293',
+  /**
+   * Paste your real AdSense ad unit IDs here after creating responsive units
+   * (AdSense → Ads → By ad unit). Until a unit ID is set, page space is kept as
+   * a labelled placeholder instead of rendering a broken, slot-less ad.
+   */
+  adsenseSlots: {
+    horizontal: '', // e.g. '1234567890' — leaderboard / inline responsive unit
+    rectangle: '', // medium rectangle (300x250) / responsive unit
+    vertical: '', // tall skyscraper responsive unit for sidebars
+  } as const,
   cloudflareAnalyticsToken: '', // e.g. 'a1b2c3d4e5f6...'
   googleOAuthClientId: '516024835908-phbijidr675u197ekn7aj63771g6lidq.apps.googleusercontent.com',
   maxUploadMb: 200,

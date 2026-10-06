@@ -30,28 +30,49 @@ export interface HeadOptions {
   robots?: string
   /** Path beginning with `/`, resolved against the configured site URL. */
   path?: string
+  /** Site-relative social preview image, e.g. `'/og-image.png'`. */
+  image?: string
+  type?: 'website' | 'article'
+  /** ISO date(s) used for `article:published_time` / `article:modified_time`. */
+  publishedTime?: string
+  updatedTime?: string
 }
+
+const SITE_URL = (): string => SITE.url.replace(/\/$/, '')
 
 /** Keeps the document title and the SEO/OG tags in sync with the current route. */
 export function useHead(options: HeadOptions): void {
-  const { title, fullTitle, description, robots, path } = options
+  const { title, fullTitle, description, robots, path, image, type, publishedTime, updatedTime } =
+    options
 
   useEffect(() => {
     const resolved =
       fullTitle ??
       (title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`)
     const desc = description ?? SITE.description
-    const url = path ? `${SITE.url.replace(/\/$/, '')}${path}` : SITE.url
+    const url = path ? `${SITE_URL()}${path}` : SITE.url
+    const imageUrl = `${SITE_URL()}${image ?? '/og-image.png'}`
+    const ogType = type ?? 'website'
 
     document.title = resolved
     setMeta('name', 'description', desc)
     setMeta('name', 'robots', robots ?? 'index, follow')
-    setLink('canonical', path ? url : `${SITE.url.replace(/\/$/, '')}/`)
+    setLink('canonical', path ? url : `${SITE_URL()}/`)
     setMeta('property', 'og:title', resolved)
     setMeta('property', 'og:description', desc)
     setMeta('property', 'og:url', url)
-    setMeta('property', 'og:type', 'website')
+    setMeta('property', 'og:type', ogType)
+    setMeta('property', 'og:site_name', SITE.name)
+    setMeta('property', 'og:locale', 'en_US')
+    setMeta('property', 'og:image', imageUrl)
+    setMeta('property', 'og:image:width', '1200')
+    setMeta('property', 'og:image:height', '630')
+    setMeta('property', 'og:image:alt', SITE.name)
+    setMeta('name', 'twitter:card', 'summary_large_image')
     setMeta('name', 'twitter:title', resolved)
     setMeta('name', 'twitter:description', desc)
-  }, [title, fullTitle, description, robots, path])
+    setMeta('name', 'twitter:image', imageUrl)
+    setMeta('property', 'article:published_time', publishedTime ?? '')
+    setMeta('property', 'article:modified_time', updatedTime ?? '')
+  }, [title, fullTitle, description, robots, path, image, type, publishedTime, updatedTime])
 }

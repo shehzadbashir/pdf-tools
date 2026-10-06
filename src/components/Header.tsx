@@ -32,7 +32,9 @@ export function Header(): ReactNode {
   const [menuOpen, setMenuOpen] = useState(false)
   const [toolsOpen, setToolsOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(
+    () => new URLSearchParams(window.location.search).get('q') ?? '',
+  )
   const toolsRef = useRef<HTMLDivElement>(null)
   const accountRef = useRef<HTMLDivElement>(null)
   const buttonHost = useRef<HTMLDivElement>(null)
