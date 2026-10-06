@@ -42,6 +42,17 @@ export const en = {
     backToTools: 'Back to all tools',
     secureNote: 'Processed locally in your browser with Web Crypto',
     offlineNote: 'Works offline once loaded',
+    blog: 'Blog',
+    guides: 'Guides',
+    about: 'About',
+    contact: 'Contact',
+    dmca: 'DMCA',
+    relatedTools: 'Related tools',
+    tips: 'Tips',
+    readMore: 'Read more',
+    publishedOn: 'Published',
+    updatedOn: 'Updated',
+    backToBlog: 'Back to all guides',
   },
 
   home: {
@@ -148,6 +159,30 @@ export const en = {
     title: 'Page not found',
     desc: 'The page you are looking for does not exist or has been moved.',
     cta: 'Go to the homepage',
+  },
+
+  blog: {
+    title: 'Guides & tutorials',
+    subtitle:
+      'Practical walkthroughs for working with PDFs — written by the same people who built the tools.',
+    none: 'No guides here yet.',
+  },
+
+  about: {
+    title: 'About PDF Tools',
+    subtitle:
+      'A free PDF toolkit that runs entirely in your browser, so your documents never leave your device.',
+  },
+
+  contact: {
+    title: 'Contact',
+    subtitle: 'A question, a suggestion, or something broken? We would like to hear from you.',
+    emailNote: 'Copy the address below into your email client.',
+  },
+
+  dmca: {
+    title: 'DMCA',
+    subtitle: 'Copyright notices and takedown requests.',
   },
 
   ui: {

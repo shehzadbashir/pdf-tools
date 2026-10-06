@@ -4,10 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, FileQuestion } from 'lucide-react'
 import { useHead } from '@/lib/head'
 
-export default function NotFound(): ReactNode {
+export function NotFoundPageContent(): ReactNode {
   const { t } = useTranslation()
-
-  useHead({ title: t('notFound.title'), description: t('notFound.desc') })
 
   return (
     <div className="page-container flex flex-col items-center justify-center gap-5 py-24 text-center">
@@ -26,4 +24,10 @@ export default function NotFound(): ReactNode {
       </Link>
     </div>
   )
+}
+
+export default function NotFound(): ReactNode {
+  const { t } = useTranslation()
+  useHead({ title: t('notFound.title'), description: t('notFound.desc') })
+  return <NotFoundPageContent />
 }

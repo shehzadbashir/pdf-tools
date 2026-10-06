@@ -5,6 +5,9 @@ import path from 'node:path'
 import { writeFileSync, existsSync, rmSync, mkdirSync, readFileSync } from 'node:fs'
 import { SITE, TOOL_SLUGS } from './src/config/site.ts'
 import { en } from './src/i18n/en.ts'
+import { TOOL_CONTENT } from './src/content/tools.ts'
+import { BLOG_POSTS } from './src/content/blog.ts'
+import { CONTACT_EMAIL } from './src/content/static.ts'
 
 /** Escapes text for use inside an HTML attribute or element body. */
 const esc = (value: string): string =>
@@ -71,37 +74,111 @@ function buildRoutes(): RouteMeta[] {
     const tool = en.tools[slug]
     const name = tool.name
     const short = tool.short
+    const content = TOOL_CONTENT[slug]
+    const jsonLd: Record<string, unknown>[] = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name,
+        description: tool.long,
+        step: tool.steps.map((text, index) => ({
+          '@type': 'HowToStep',
+          name: `Step ${index + 1}`,
+          text,
+        })),
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
+          { '@type': 'ListItem', position: 2, name, item: `${base}/${slug}` },
+        ],
+      },
+    ]
+    if (content && content.faq.length > 0) {
+      jsonLd.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: content.faq.map((entry) => ({
+          '@type': 'Question',
+          name: entry.q,
+          acceptedAnswer: { '@type': 'Answer', text: entry.a },
+        })),
+      })
+    }
     routes.push({
       dir: slug,
       url: `${base}/${slug}`,
       title: full(`${name} — ${short.replace(/\.$/, '')}`),
       description: short,
       robots: 'index, follow',
-      jsonLd: [
-        {
-          '@context': 'https://schema.org',
-          '@type': 'HowTo',
-          name,
-          description: tool.long,
-          step: tool.steps.map((text, index) => ({
-            '@type': 'HowToStep',
-            name: `Step ${index + 1}`,
-            text,
-          })),
-        },
-        {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
-            { '@type': 'ListItem', position: 2, name, item: `${base}/${slug}` },
-          ],
-        },
-      ],
+      jsonLd,
     })
   }
 
   routes.push(
+    {
+      dir: 'blog',
+      url: `${base}/blog`,
+      title: full(en.blog.title),
+      description: en.blog.subtitle,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: en.blog.title,
+          description: en.blog.subtitle,
+          url: `${base}/blog`,
+        },
+      ],
+    },
+    {
+      dir: 'about',
+      url: `${base}/about`,
+      title: full(en.about.title),
+      description: en.about.subtitle,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'AboutPage',
+          name: en.about.title,
+          description: en.about.subtitle,
+          url: `${base}/about`,
+        },
+      ],
+    },
+    {
+      dir: 'contact',
+      url: `${base}/contact`,
+      title: full(en.contact.title),
+      description: en.contact.subtitle,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: en.contact.title,
+          url: `${base}/contact`,
+          mainEntity: {
+            '@type': 'Organization',
+            name: SITE.name,
+            email: CONTACT_EMAIL,
+            url: `${base}/`,
+          },
+        },
+      ],
+    },
+    {
+      dir: 'dmca',
+      url: `${base}/dmca`,
+      title: full(en.dmca.title),
+      description: en.dmca.subtitle,
+      robots: 'index, follow',
+      jsonLd: [],
+    },
     {
       dir: 'privacy',
       url: `${base}/privacy`,
@@ -127,6 +204,38 @@ function buildRoutes(): RouteMeta[] {
       jsonLd: [],
     },
   )
+
+  for (const post of BLOG_POSTS) {
+    routes.push({
+      dir: `blog/${post.slug}`,
+      url: `${base}/blog/${post.slug}`,
+      title: full(post.title),
+      description: post.excerpt,
+      robots: 'index, follow',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description: post.excerpt,
+          datePublished: post.published,
+          dateModified: post.updated,
+          author: { '@type': 'Organization', name: SITE.name, url: `${base}/` },
+          publisher: { '@type': 'Organization', name: SITE.name, url: `${base}/` },
+          mainEntityOfPage: `${base}/blog/${post.slug}`,
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${base}/` },
+            { '@type': 'ListItem', position: 2, name: en.blog.title, item: `${base}/blog` },
+            { '@type': 'ListItem', position: 3, name: post.title, item: `${base}/blog/${post.slug}` },
+          ],
+        },
+      ],
+    })
+  }
 
   return routes
 }
@@ -196,7 +305,17 @@ function searchEnginePlugin(): Plugin {
       if (!existsSync(out)) return
 
       const url = SITE.url.replace(/\/$/, '')
-      const routes = ['/', ...TOOL_SLUGS.map((slug) => `/${slug}`), '/privacy', '/terms']
+      const routes = [
+        '/',
+        ...TOOL_SLUGS.map((slug) => `/${slug}`),
+        '/blog',
+        ...BLOG_POSTS.map((post) => `/blog/${post.slug}`),
+        '/about',
+        '/contact',
+        '/dmca',
+        '/privacy',
+        '/terms',
+      ]
 
       const xml = [
         '<?xml version="1.0" encoding="UTF-8"?>',

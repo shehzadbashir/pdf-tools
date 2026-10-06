@@ -1,33 +1,65 @@
 import { Suspense, useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronRight, Home, ShieldCheck } from 'lucide-react'
+import { ArrowRight, ChevronRight, Home, ShieldCheck, HelpCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_ORDER, TOOLS, toolBySlug, type ToolCategory, type ToolDefinition } from './registry'
 import { useHead } from '@/lib/head'
 import { SITE, type ToolSlug } from '@/config/site'
 import { AdSlot } from '@/components/AdSlot'
+import { TOOL_CONTENT } from '@/content/tools'
 
-function useToolJsonLd(tool: ToolDefinition, name: string, description: string, steps: string[]): void {
+function useToolJsonLd(
+  tool: ToolDefinition,
+  name: string,
+  description: string,
+  steps: string[],
+  faq: { q: string; a: string }[],
+): void {
   useEffect(() => {
-    const node = document.createElement('script')
-    node.type = 'application/ld+json'
-    node.id = `ld-${tool.slug}`
-    node.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'HowTo',
-      name,
-      description,
-      step: steps.map((text, index) => ({
-        '@type': 'HowToStep',
-        name: `Step ${index + 1}`,
-        text,
-      })),
+    const nodes = [
+      {
+        id: `ld-${tool.slug}`,
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'HowTo',
+          name,
+          description,
+          step: steps.map((text, index) => ({
+            '@type': 'HowToStep',
+            name: `Step ${index + 1}`,
+            text,
+          })),
+        },
+      },
+      ...(faq.length > 0
+        ? [
+            {
+              id: `ld-faq-${tool.slug}`,
+              data: {
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: faq.map((entry) => ({
+                  '@type': 'Question',
+                  name: entry.q,
+                  acceptedAnswer: { '@type': 'Answer', text: entry.a },
+                })),
+              },
+            },
+          ]
+        : []),
+    ]
+    const appended = nodes.map((node) => {
+      const el = document.createElement('script')
+      el.type = 'application/ld+json'
+      el.id = node.id
+      el.textContent = JSON.stringify(node.data)
+      document.head.appendChild(el)
+      return el
     })
-    document.head.appendChild(node)
     return () => {
-      node.remove()
+      appended.forEach((el) => el.remove())
     }
-  }, [tool.slug, name, description, steps])
+  }, [tool.slug, name, description, steps, faq])
 }
 
 function ToolSkeleton(): ReactNode {
@@ -64,8 +96,14 @@ export function ToolShell({
   const steps = Array.isArray(rawSteps) ? (rawSteps as string[]) : []
   const categoryName = t(`home.categories.${tool.category as ToolCategory}`)
 
+  const content = TOOL_CONTENT[slug]
+
+  const related = (content?.related ?? [])
+    .map((relatedSlug) => toolBySlug(relatedSlug))
+    .filter((entry): entry is ToolDefinition => Boolean(entry))
+
   useHead({ title: `${name} — ${short.replace(/\.$/, '')}`, description: short, path: tool.path })
-  useToolJsonLd(tool, name, long, steps)
+  useToolJsonLd(tool, name, long, steps, content?.faq ?? [])
 
   return (
     <div className="pb-16">
@@ -90,9 +128,10 @@ export function ToolShell({
               <h1 className="text-2xl font-extrabold tracking-tight text-[var(--ink)] sm:text-3xl">
                 {name}
               </h1>
-              <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-[var(--ink-2)] sm:text-[0.95rem]">
-                {long}
-              </p>
+              <div className="mt-1.5 max-w-3xl text-sm leading-relaxed text-[var(--ink-2)] sm:text-[0.95rem]">
+                <p>{long}</p>
+                {content?.brief.map((paragraph) => <p key={paragraph} className="mt-2">{paragraph}</p>)}
+              </div>
             </div>
           </div>
         </div>
@@ -118,6 +157,88 @@ export function ToolShell({
               {t('common.privacy')}
             </p>
           </section>
+
+          {content ? (
+            <>
+              <section className="card p-6 sm:p-7">
+                <h2 className="text-xl font-extrabold tracking-tight text-[var(--ink)]">
+                  {name}: {t('common.guides')}
+                </h2>
+                <div className="mt-5 space-y-7">
+                  {content.sections.map((section) => (
+                    <div key={section.heading}>
+                      <h3 className="text-base font-bold text-[var(--ink)]">{section.heading}</h3>
+                      {section.paragraphs.map((paragraph) => (
+                        <p key={paragraph} className="mt-2 text-sm leading-relaxed text-[var(--ink-2)] sm:text-[0.95rem]">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="card p-6 sm:p-7">
+                <h2 className="text-xl font-extrabold tracking-tight text-[var(--ink)]">
+                  {t('common.tips')}
+                </h2>
+                <ul className="mt-4 space-y-2.5">
+                  {content.tips.map((tip) => (
+                    <li key={tip} className="flex items-start gap-2.5 text-sm leading-relaxed text-[var(--ink-2)]">
+                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500/10 text-[0.65rem] font-black text-brand-600">
+                        ✓
+                      </span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {content.faq.length > 0 ? (
+                <section className="card p-6 sm:p-7">
+                  <h2 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-[var(--ink)]">
+                    <HelpCircle size={19} className="text-brand-600" />
+                    {t('common.faq')}
+                  </h2>
+                  <div className="mt-4 grid gap-3">
+                    {content.faq.map((entry) => (
+                      <details key={entry.q} className="group rounded-xl border border-[var(--line)] p-4">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold text-[var(--ink)]">
+                          {entry.q}
+                          <ChevronRight size={15} className="shrink-0 text-[var(--ink-2)] transition group-open:rotate-90 rtl:rotate-180" />
+                        </summary>
+                        <p className="mt-3 text-sm leading-relaxed text-[var(--ink-2)]">{entry.a}</p>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {related.length > 0 ? (
+                <section className="card p-6 sm:p-7">
+                  <h2 className="text-xl font-extrabold tracking-tight text-[var(--ink)]">
+                    {t('common.relatedTools')}
+                  </h2>
+                  <ul className="mt-4 grid gap-2 sm:grid-cols-3">
+                    {related.map((relatedTool) => (
+                      <li key={relatedTool.slug}>
+                        <Link
+                          to={relatedTool.path}
+                          className="group flex items-center gap-2.5 rounded-xl border border-[var(--line)] p-3 text-sm font-semibold text-[var(--ink)] transition hover:border-brand-400/60 hover:text-brand-600"
+                        >
+                          <relatedTool.icon size={16} className="shrink-0 text-brand-600" />
+                          <span className="min-w-0 flex-1 truncate">
+                            {t(`tools.${relatedTool.slug}.name`)}
+                          </span>
+                          <ArrowRight size={14} className="opacity-0 transition group-hover:opacity-100 rtl:rotate-180" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </>
+          ) : null}
         </div>
 
         <aside className="space-y-6">

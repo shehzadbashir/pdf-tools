@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, History, Menu, Search, X, LogOut, UserRound } from 'lucide-react'
+import { ChevronDown, History, Menu, Search, X, LogOut, UserRound, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { CATEGORY_ORDER, TOOLS } from '@/tools/registry'
 import { LanguageSwitch } from './LanguageSwitch'
@@ -144,6 +144,20 @@ export function Header(): ReactNode {
             <History size={15} />
             {t('common.history')}
           </NavLink>
+
+          <NavLink
+            to="/blog"
+            className={({ isActive }) =>
+              `flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                isActive
+                  ? 'text-brand-600'
+                  : 'text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]'
+              }`
+            }
+          >
+            <BookOpen size={15} />
+            {t('common.blog')}
+          </NavLink>
         </nav>
 
         {/* Search */}
@@ -285,6 +299,17 @@ export function Header(): ReactNode {
               >
                 <History size={15} />
                 {t('common.history')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost w-full"
+                onClick={() => {
+                  setMenuOpen(false)
+                  void navigate('/blog')
+                }}
+              >
+                <BookOpen size={15} />
+                {t('common.blog')}
               </button>
             </div>
 

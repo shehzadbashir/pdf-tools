@@ -8,6 +8,11 @@ const Home = lazy(() => import('@/pages/Home'))
 const HistoryPage = lazy(() => import('@/pages/History'))
 const LegalPage = lazy(() => import('@/pages/Legal'))
 const NotFoundPage = lazy(() => import('@/pages/NotFound'))
+const BlogPage = lazy(() => import('@/pages/Blog'))
+const BlogPostPage = lazy(() => import('@/pages/BlogPost'))
+const AboutPage = lazy(() => import('@/pages/About'))
+const ContactPage = lazy(() => import('@/pages/Contact'))
+const DmcaPage = lazy(() => import('@/pages/Dmca'))
 
 function lazy_(Component: ComponentType): ReactNode {
   return (
@@ -38,6 +43,11 @@ export default function App(): ReactNode {
           />
         ))}
         <Route path="/history" element={lazy_(HistoryPage)} />
+        <Route path="/blog" element={lazy_(BlogPage)} />
+        <Route path="/blog/:slug" element={lazy_(BlogPostPage)} />
+        <Route path="/about" element={lazy_(AboutPage)} />
+        <Route path="/contact" element={lazy_(ContactPage)} />
+        <Route path="/dmca" element={lazy_(DmcaPage)} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route path="*" element={lazy_(NotFoundPage)} />
